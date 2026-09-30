@@ -1,56 +1,61 @@
-# Incorporating Machine Learning in a Microcontroller-Driven Sensor System for Monitoring Cold Chain Pharmaceutical Products
+# Cold-Chain Monitoring with Machine Learning (Flask)
 
-## Thesis Overview
-This repository contains the code and documents for my thesis titled "Incorporating Machine Learning in a Microcontroller-Driven Sensor System for Monitoring Cold Chain Pharmaceutical Products." The project explores the integration of machine learning techniques with a microcontroller-based sensor system to enhance the monitoring of cold chain environments, particularly for pharmaceutical products that require strict temperature controls.
+A Flask web app that monitors pharmaceutical cold-chain temperature sensors. It sends email and SMS alerts when readings cross a threshold, or when an LSTM model **predicts** they're about to.
 
-## Introduction
-The pharmaceutical industry relies heavily on cold chain logistics to maintain the integrity of temperature-sensitive products. This thesis investigates how machine learning algorithms can be integrated into a microcontroller-driven sensor system to improve the accuracy and predictability of temperature monitoring, reducing the risk of product spoilage and ensuring patient safety.
+This is the web application part of my undergraduate dissertation: *Incorporating Machine Learning in a Microcontroller-Driven Sensor System for Monitoring Cold Chain Pharmaceutical Products* (2024).
 
-## Project Structure
-- `/src`: Contains the source code for the microcontroller firmware, web application, and machine learning models.
-- `/data`: Includes datasets used for training and testing the machine learning models.
-- `/models`: Saved models and scripts for loading and evaluating them.
-- `/docs`: Documentation, including the thesis report and supplementary materials.
-- `/tests`: Contains the test cases and scripts used to validate the system.
+## Why
 
-## System Requirements
-### Software
-- **Python 3.x**: Required for the machine learning and data processing scripts.
-- **C++**: Used for programming the ESP32 microcontroller.
-- **Google Colab**: Used for creating machine learning models & data analysis.
-- **MySQL Workbench 8.0**: Used for data preprocessing and management.
-- **Flask**: For building the web application.
+Vaccines and many medicines must stay within tight temperature ranges, usually 2–8 °C, and a fridge failure noticed too late means stock gets thrown away. The system pairs cheap Bluetooth sensors with a microcontroller, stores readings as time series, and uses a forecasting model to warn staff before a breach instead of after it.
 
-### Hardware
-- **ESP32 Microcontroller**
-- **Ruuvi Tag Open Source BLE Sensor**
+## How it works
 
-# Flask Application for Web Application Element of Dissertation
+```
+Ruuvi BLE sensor ─► ESP32 ─► InfluxDB (time series) ─► Flask app ─► dashboard
+                                                          │
+                                        LSTM forecast ────┤
+                                                          └─► SendGrid email / Twilio SMS alerts
+```
 
-This application is designed to monitor temperature sensors and send alerts via email and SMS when certain thresholds are reached or predicted to be reached(via LSTM Model). It uses Flask for the backend, InfluxDB for timeseries data storage, and SendGrid and Twilio for notifications.
+- **Dashboard:** live and recent sensor readings.
+- **Thresholds:** configurable warning (1–6 °C) and critical (−1–8 °C) limits in `configs/Config.json`, editable from the settings page.
+- **Prediction:** a saved Keras LSTM model (`models/LSTMModel/`) forecasts upcoming temperatures and triggers early warnings.
+- **Alerts:** email through SendGrid and SMS through Twilio.
+- **Login:** a simple user login protects the dashboard and settings.
 
-## Setup Instructions
+## Tech stack
 
-### Requirements
+Python · Flask 3 · TensorFlow/Keras (LSTM) · InfluxDB · SendGrid · Twilio · pandas · scikit-learn
+Hardware: ESP32 microcontroller, Ruuvi Tag BLE sensor
 
-- Python 3.x
-- pip (Python package installer)
-- Virtual environment (recommended)
+## Getting started
 
-### Installation
+```bash
+git clone https://github.com/Aaron-Darcy/cold-chain-monitoring-flask.git
+cd cold-chain-monitoring-flask
+python -m venv venv
+venv\Scripts\activate          # macOS/Linux: source venv/bin/activate
+pip install -r requirements.txt
+```
 
-1. Clone the repository:
-   git clone https://github.com/Aaron-Darcy/FinalYearDissertationWebApplication/
-2. cd into root folder
-3. Set up a virtual environment (optional but recommended):
-   python -m venv venv
-   .\venv\Scripts\activate
-4. Install the required packages:
-   pip install -r requirements.txt
-5. Set up the `.env` file in root directory with configuration and secrets. Use the `.env.example` file as a template.
+Copy `.env.example` to `.env` and fill in your Flask secret key, the SendGrid and Twilio credentials, and the InfluxDB connection details. Then run:
 
-### Running the Application
+```bash
+flask run
+```
 
-1. To start the Flask server, run(when enviroment is enabled):
-   flask run
+## Project structure
 
+```
+app.py                  # Flask routes (dashboard, login, settings, test alerts)
+configs/Config.json     # alert thresholds + contact details
+models/LSTMModel/       # saved LSTM model
+templates/              # dashboard + settings pages
+venv/components/        # alerting, prediction and user/login helpers
+Project Documents/      # final dissertation (PDF) + presentation
+```
+
+## Related
+
+- [cold-chain-sensor-preprocessing](https://github.com/Aaron-Darcy/cold-chain-sensor-preprocessing): the data preprocessing proof of concept behind the model.
+- The full write-up is in `Project Documents/`.
